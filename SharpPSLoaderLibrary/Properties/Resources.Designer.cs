@@ -63,29 +63,9 @@ namespace SharpPSLoaderLibrary.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        public static byte[] Invoke_BloodHound_ps1 {
+        public static byte[] arpPac_ps1 {
             get {
-                object obj = ResourceManager.GetObject("Invoke_BloodHound_ps1", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        public static byte[] PowerSharpPack_ps1 {
-            get {
-                object obj = ResourceManager.GetObject("PowerSharpPack_ps1", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        public static byte[] powerview_ps1 {
-            get {
-                object obj = ResourceManager.GetObject("powerview_ps1", resourceCulture);
+                object obj = ResourceManager.GetObject("arpPac_ps1", resourceCulture);
                 return ((byte[])(obj));
             }
         }

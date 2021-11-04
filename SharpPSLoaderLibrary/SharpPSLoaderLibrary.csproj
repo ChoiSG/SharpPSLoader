@@ -80,6 +80,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Resources\arpPac.ps1.xor" />
     <None Include="Resources\Invoke-BloodHound.ps1.xor" />
     <None Include="Resources\PowerSharpPack.ps1.xor" />
     <None Include="Resources\powerview.ps1.xor" />
