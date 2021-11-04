@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace SharpPSLoader.Properties {
+namespace SharpPSLoaderLibrary.Properties {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace SharpPSLoader.Properties {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("SharpPSLoader.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("SharpPSLoaderLibrary.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -73,9 +73,19 @@ namespace SharpPSLoader.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        public static byte[] Invoke_Mimikatz_ps1 {
+        public static byte[] PowerSharpPack_ps1 {
             get {
-                object obj = ResourceManager.GetObject("Invoke_Mimikatz_ps1", resourceCulture);
+                object obj = ResourceManager.GetObject("PowerSharpPack_ps1", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        public static byte[] powerview_ps1 {
+            get {
+                object obj = ResourceManager.GetObject("powerview_ps1", resourceCulture);
                 return ((byte[])(obj));
             }
         }

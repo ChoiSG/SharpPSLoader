@@ -121,7 +121,10 @@
   <data name="Invoke_BloodHound_ps1" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Invoke-BloodHound.ps1.xor;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="Invoke_Mimikatz_ps1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Invoke-Mimikatz.ps1.xor;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="PowerSharpPack_ps1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\PowerSharpPack.ps1.xor;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="powerview_ps1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\powerview.ps1.xor;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
 </root>

@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SharpPSLoader")]
+[assembly: AssemblyTitle("SharpPSLoaderConsole")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("SharpPSLoader")]
+[assembly: AssemblyProduct("SharpPSLoaderConsole")]
 [assembly: AssemblyCopyright("Copyright ©  2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("04690188-549d-42c4-afe9-bc2653cde7b8")]
+[assembly: Guid("4ea75f8d-f287-47e4-b698-931d90a3a85c")]
 
 // Version information for an assembly consists of the following four values:
 //
