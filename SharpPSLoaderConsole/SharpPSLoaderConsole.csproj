@@ -96,6 +96,7 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="Resources\arpPac.ps1.xor" />
+    <None Include="Resources\oodhoun.ps1.xor" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">

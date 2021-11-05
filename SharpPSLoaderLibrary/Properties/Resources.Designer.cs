@@ -69,5 +69,15 @@ namespace SharpPSLoaderLibrary.Properties {
                 return ((byte[])(obj));
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        public static byte[] oodhoun_ps1 {
+            get {
+                object obj = ResourceManager.GetObject("oodhoun_ps1", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
     }
 }
