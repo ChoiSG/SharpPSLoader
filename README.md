@@ -12,7 +12,7 @@ SharpPSLoader works like this:
 For detailed usage, refer to the `Usage` section below.
 
 ## Credits 
-All credits goes to [@S3cur3Th1sSh1t](https://github.com/S3cur3Th1sSh1t), [@Jean_Maes_1994](https://twitter.com/Jean_Maes_1994), [@xpn](https://twitter.com/_xpn_), [@3xpl01tc0d3r](https://3xpl01tc0d3r.blogspot.com/), OSEP, and other researchers in the field. I just copy/pasted their code & added couple lines of code and that's all.
+All credits goes to [@S3cur3Th1sSh1t](https://github.com/S3cur3Th1sSh1t), [@Jean_Maes_1994](https://twitter.com/Jean_Maes_1994), [@xpn](https://twitter.com/_xpn_), [@3xpl01tc0d3r](https://3xpl01tc0d3r.blogspot.com/), [@mariuszbit/mgeeky](https://twitter.com/mariuszbit), OSEP, and other researchers in the field. I just copy/pasted their code & added couple lines of code and that's all.
 
 ## Demo 
 SharpPSLoader can be executed on-disk, in-memory, through InstallUtils.exe, and through rundll32.exe. 
@@ -81,6 +81,10 @@ If you want to obfuscate the assembly with confuserEx and execute it in-memory, 
 </project>
 ```
 
-## References
+## References & Credits 
 - [PowerSharpPack](https://github.com/S3cur3Th1sSh1t/PowerSharpPack)
 - [Bloodhound](https://github.com/BloodHoundAD/BloodHound)
+- https://www.netspi.com/blog/technical/adversary-simulation/evolution-of-offensive-powershell-invocation/
+- https://github.com/mgeeky/Stracciatella
+- https://blog.xpnsec.com/rundll32-your-dotnet/
+- https://3xpl01tc0d3r.blogspot.com/2019/11/managed-dll-exports-and-run-via-rundll32.html
