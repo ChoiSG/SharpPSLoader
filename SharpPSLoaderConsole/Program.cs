@@ -274,7 +274,6 @@ namespace SharpPSLoaderConsole
                 if (obj != null)
                 {
                     Console.WriteLine(obj.BaseObject.ToString());
-                    Console.WriteLine("maybe something went wrong?");
                 }
             }
 

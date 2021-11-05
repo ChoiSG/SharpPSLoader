@@ -83,10 +83,10 @@ namespace SharpPSLoaderLibrary
             switch (payload.Trim().ToLower())
             {
                 case "1":
-                    encPayload = resourceDict.Where(a => a.Key.Contains("arppack")).Select(a => a.Value).First();
+                    encPayload = resourceDict.Where(a => a.Key.Contains("arppac")).Select(a => a.Value).First();
                     break;
                 case "2":
-                    encPayload = resourceDict.Where(a => a.Key.Contains("arphoun")).Select(a => a.Value).First();
+                    encPayload = resourceDict.Where(a => a.Key.Contains("oodhoun")).Select(a => a.Value).First();
                     break;
                 default:
                     break;
