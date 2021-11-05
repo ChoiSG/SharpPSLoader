@@ -81,6 +81,31 @@ If you want to obfuscate the assembly with confuserEx and execute it in-memory, 
 </project>
 ```
 
+## Adding Powershell Payloads 
+Currently, the powershell payloads are encrypted with single-byte XOR bytes with a hardcode key of "111".
+
+The following powershell script can be used to create a xor encrypted powershell payload.
+```
+function Invoke-SingleByteXOR{
+	param($filepath, $key)
+
+    $xorKey = [System.Convert]::ToByte($key)
+	$byteString = [System.IO.File]::ReadAllBytes($filepath)
+
+    $xorData = $(for($i=0; $i -lt $byteString.length; $i++){
+        $byteString[$i] = $byteString[$i] -bxor $xorKey
+    })
+
+    Set-Content $($filepath+".xor") -Value $byteString -Encoding Byte
+}
+
+ps> Invoke-SingleByteXOR c:\dev\powerview.ps1 111 
+```
+
+Add the xor'ed payload through `Project right click > Properties > Resources > drag/drop the payload`. 
+
+Then, edit the switch statement in `DecryptedPSFromRsrcDict` function.  
+
 ## References & Credits 
 - [PowerSharpPack](https://github.com/S3cur3Th1sSh1t/PowerSharpPack)
 - [Bloodhound](https://github.com/BloodHoundAD/BloodHound)
